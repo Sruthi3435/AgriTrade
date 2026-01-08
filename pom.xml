@@ -28,7 +28,15 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
+
+			<sonar.host.url>http://localhost:9000</sonar.host.url>
+			<sonar.login>sqa_3309269b792d0f5d08a523a907a7a98118d41151</sonar.login>
+		<sonar.projectKey>farmer-retailer-direct-trade</sonar.projectKey>
+<!--		<sonar.branch.name>master</sonar.branch.name>-->
+
+
 	</properties>
+
     <repositories>
         <repository>
             <id>central</id>
@@ -109,7 +117,7 @@
 
 
 
-    </dependencies>
+	</dependencies>
 
 	<build>
 		<plugins>
@@ -125,6 +133,14 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
+
+				<plugin>
+					<groupId>org.sonarsource.scanner.maven</groupId>
+					<artifactId>sonar-maven-plugin</artifactId>
+					<version>4.0.0.4121</version>
+
+				</plugin>
+
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

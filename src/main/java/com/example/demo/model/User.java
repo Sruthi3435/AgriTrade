@@ -1,5 +1,6 @@
 package com.example.demo.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -35,7 +36,7 @@ public class User {
 
     private String cropType;
     private String businessName;
-
+    @JsonIgnore
     @Column(name = "temporary_password")
     private boolean temporaryPassword;
 
@@ -44,6 +45,14 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private UserStatus status;
-
+    @JsonIgnore
     private LocalDateTime createdAt = LocalDateTime.now();
 }
+
+
+
+
+
+
+
+

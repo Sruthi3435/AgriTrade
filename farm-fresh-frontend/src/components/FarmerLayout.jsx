@@ -8,27 +8,30 @@ export default function FarmerLayout({ children }) {
     const [showPanel, setShowPanel] = useState(false);
     const [notifications, setNotifications] = useState([]);
 
-
-
     const toggleNotifications = () => setShowPanel(!showPanel);
+
     const loadNotifications = async () => {
         const res = await api.get("/bid/farmer/notifications");
         setNotifications(res.data);
         const unread = res.data.filter(n => !n.read).length;
         setUnreadCount(unread);
     };
+
     const markAsRead = async (id) => {
         await api.post(`/bid/farmer/notifications/read/${id}`);
-
-// remove visually
         setNotifications(prev => prev.filter(n => n.id !== id));
-
-// decrease count
         setUnreadCount(prev => prev - 1);
     };
+
     useEffect(() => {
         loadNotifications();
     }, []);
+
+    const handleLogout = () => {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/login";
+    };
 
     useEffect(() => {
         const interval = setInterval(async () => {
@@ -36,7 +39,7 @@ export default function FarmerLayout({ children }) {
             const unread = res.data.filter(n => !n.read).length;
 
             if (unread > unreadCount) {
-                new Audio('/notify.mp3').play();
+                new Audio("/notify.mp3").play();
             }
 
             setUnreadCount(unread);
@@ -46,36 +49,52 @@ export default function FarmerLayout({ children }) {
     }, [unreadCount]);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100">
 
             {/* NAVBAR */}
-            <div className="w-full bg-green-800 text-white flex items-center px-8 py-4 shadow fixed top-0 left-0 z-50">
+            <header className="fixed top-0 left-0 w-full z-50 bg-green-900/95 backdrop-blur shadow-lg">
+                <div className="flex items-center px-10 py-4 text-white">
 
-                {/* logo */}
-                <h2 className="text-2xl font-bold">AgroLink</h2>
+                    {/* LOGO */}
+                    <h2 className="text-2xl font-bold tracking-wide">
+                        AgroLink
+                    </h2>
 
-                {/* nav links */}
-                <nav className="flex space-x-8 ml-auto mr-6">
-                    <Link to="/farmer/dashboard" className="hover:text-gray-200">Dashboard</Link>
-                    <Link to="/farmer/listings" className="hover:text-gray-200">My Listings</Link>
-                    <Link to="/farmer/new-listing" className="hover:text-gray-200">Add Product</Link>
-                    <Link to="/farmer/orders" className="hover:text-gray-200">Orders</Link>
-                    <Link to="/farmer/profile" className="hover:text-gray-200">Profile</Link>
-                </nav>
+                    {/* NAV LINKS */}
+                    <nav className="flex items-center space-x-8 ml-auto mr-6 text-sm font-medium">
+                        <Link className="hover:text-green-300" to="/farmer/dashboard">Dashboard</Link>
+                        <Link className="hover:text-green-300" to="/farmer/listings">My Listings</Link>
+                        <Link className="hover:text-green-300" to="/farmer/new-listing">Add Product</Link>
+                        <Link className="hover:text-green-300" to="/farmer/orders">Orders</Link>
+                        <Link className="hover:text-green-300" to="/farmer/notifications">Notifications</Link>
+                        <Link className="hover:text-green-300" to="/farmer/profile">Profile</Link>
 
-                {/* bell */}
-                <div className="relative cursor-pointer" onClick={toggleNotifications}>
-                    <i className="fa fa-bell text-2xl text-yellow-400"></i>
-                    {unreadCount > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                            {unreadCount}
-                        </span>
-                    )}
+                        <button
+                            onClick={handleLogout}
+                            className="bg-red-500 hover:bg-red-600 px-4 py-1.5 rounded-md text-xs font-semibold transition"
+                        >
+                            Logout
+                        </button>
+                    </nav>
+
+                    {/* NOTIFICATION BELL */}
+                    <div className="relative cursor-pointer" onClick={toggleNotifications}>
+                        <i className="fa fa-bell text-xl text-yellow-400"></i>
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                                {unreadCount}
+                            </span>
+                        )}
+                    </div>
                 </div>
-                {showPanel && (
-                    <div className="absolute right-8 top-16 bg-white text-black shadow-lg rounded-lg w-80 z-50 p-4 max-h-96 overflow-y-auto">
 
-                        <h3 className="font-semibold text-lg mb-3 border-b pb-2">Notifications</h3>
+                {/* NOTIFICATION PANEL */}
+                {showPanel && (
+                    <div className="absolute right-10 top-16 bg-white text-black shadow-xl rounded-xl w-80 z-50 p-4 max-h-96 overflow-y-auto animate-slide-down">
+
+                        <h3 className="font-semibold text-lg mb-3 border-b pb-2">
+                            Notifications
+                        </h3>
 
                         {notifications.length === 0 ? (
                             <p className="text-gray-500 text-sm">No notifications</p>
@@ -83,11 +102,11 @@ export default function FarmerLayout({ children }) {
                             notifications.map((n) => (
                                 <div
                                     key={n.id}
-                                    className={`p-3 rounded mb-2 ${
-                                        !n.read ? "bg-yellow-100" : "bg-gray-100"
+                                    className={`p-3 rounded-lg mb-2 transition ${
+                                        !n.read ? "bg-green-50" : "bg-gray-50"
                                     }`}
                                 >
-                                    <p className="text-sm">{n.message}</p>
+                                    <p className="text-sm text-gray-800">{n.message}</p>
                                     <p className="text-xs text-gray-500 mt-1">
                                         {new Date(n.createdAt).toLocaleString()}
                                     </p>
@@ -95,25 +114,22 @@ export default function FarmerLayout({ children }) {
                                     {!n.read && (
                                         <button
                                             onClick={() => markAsRead(n.id)}
-                                            className="text-blue-600 text-xs mt-1"
+                                            className="text-green-700 text-xs mt-1 font-medium hover:underline"
                                         >
                                             Mark as read
                                         </button>
-
-
                                     )}
                                 </div>
                             ))
                         )}
                     </div>
                 )}
+            </header>
 
-            </div>
-
-            {/* page content */}
-            <div className="pt-20 p-8">
+            {/* PAGE CONTENT */}
+            <main className="pt-24 px-10 pb-10">
                 {children}
-            </div>
+            </main>
 
         </div>
     );

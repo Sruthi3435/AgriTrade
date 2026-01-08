@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.AdminDashboardStats;
 import com.example.demo.model.User;
 import com.example.demo.model.UserStatus;
 import com.example.demo.repository.UserRepository;
@@ -43,7 +44,7 @@ public class AdminServiceImpl implements AdminService {
                 .substring(0, 8);
 
 
-System.out.println("Temp password: " + tempPassword);
+        System.out.println("Temp password: " + tempPassword);
 
         user.setPassword(passwordEncoder.encode(tempPassword));
         user.setTemporaryPassword(true);
@@ -62,4 +63,25 @@ System.out.println("Temp password: " + tempPassword);
         user.setStatus(UserStatus.REJECTED);
         userRepository.save(user);
     }
+
+
+    @Override
+    public AdminDashboardStats getDashboardStats() {
+
+        long total = userRepository.count();
+        long approved = userRepository.countByStatus(UserStatus.APPROVED);
+        long pending = userRepository.countByStatus(UserStatus.PENDING);
+        long rejected = userRepository.countByStatus(UserStatus.REJECTED);
+
+        List<User> users = userRepository.findByStatus(UserStatus.PENDING);
+
+        return new AdminDashboardStats(
+                total,
+                approved,
+                pending,
+                rejected,
+                users
+        );
+    }
+
 }

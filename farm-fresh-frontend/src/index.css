@@ -34,3 +34,347 @@ body {
 .animate-slideLeft {
     animation: slideLeft 0.3s ease-out;
 }
+/* CARD */
+.order-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.order-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+}
+
+/* HEADER */
+.order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-chip {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-chip.paid {
+    background: #e6f9f0;
+    color: #0f9d58;
+}
+
+.status-chip.pending {
+    background: #fff3e0;
+    color: #ef6c00;
+    animation: pulse 2s infinite;
+}
+
+/* ACTIONS */
+.btn-pay {
+    background: linear-gradient(135deg, #2e7d32, #66bb6a);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-track {
+    background: #1e88e5;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+/* MODAL */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-container {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    width: 420px;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(239,108,0,0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(239,108,0,0); }
+    100% { box-shadow: 0 0 0 0 rgba(239,108,0,0); }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+/* PAGE */
+.register-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #e9fbe9, #f4fff0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* MAIN LAYOUT */
+.register-container {
+    width: 90%;
+    max-width: 1400px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+}
+
+/* LEFT */
+.register-left h1 {
+    font-size: 48px;
+    font-weight: 800;
+    color: #1b5e20;
+    margin-bottom: 20px;
+}
+
+.register-left p {
+    font-size: 18px;
+    color: #444;
+    max-width: 420px;
+    margin-bottom: 20px;
+}
+
+.register-left ul {
+    list-style: none;
+    padding: 0;
+}
+
+.register-left li {
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+/* CARD */
+.register-card {
+    background: #fff;
+    border-radius: 40px;
+    padding: 50px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.18);
+}
+
+.register-card.error {
+    border: 2px solid #e53935;
+}
+
+.register-card h2 {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1b5e20;
+}
+.input {
+    @apply border rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-green-500;
+}
+/* PROGRESS */
+.progress {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0 30px;
+}
+
+.progress span {
+    width: 35px;
+    height: 6px;
+    background: #ddd;
+    border-radius: 10px;
+}
+
+.progress span.active {
+    background: #2e7d32;
+}
+
+/* ERROR */
+.error-text {
+    text-align: center;
+    color: #e53935;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+/* INPUTS */
+.register-card input {
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    margin-bottom: 18px;
+    border-radius: 14px;
+    border: 1px solid #ccc;
+}
+
+.register-card input:focus {
+    outline: none;
+    border-color: #2e7d32;
+}
+
+/* ROW */
+.row {
+    display: flex;
+    gap: 15px;
+}
+
+/* ROLE SELECTION */
+.role-section {
+    text-align: center;
+}
+
+.role-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #1b5e20;
+}
+
+.role-options {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.role-card {
+    flex: 1;
+    padding: 22px;
+    border-radius: 18px;
+    border: 2px solid #ccc;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.role-card:hover {
+    border-color: #2e7d32;
+}
+
+.role-card.selected {
+    border-color: #2e7d32;
+    background: #e8f5e9;
+}
+
+/* BUTTONS */
+.actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+button {
+    padding: 14px;
+    font-size: 16px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+}
+
+button.primary {
+    background: #2e7d32;
+    color: white;
+    font-weight: 700;
+}
+
+button.primary:hover {
+    background: #1b5e20;
+}
+
+button.secondary {
+    background: #f5f5f5;
+}
+
+button.full {
+    width: 100%;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+    100% { transform: translateX(0); }
+}
+
+.animate-shake {
+    animation: shake 0.4s ease-in-out;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .register-container {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+
+    .register-left {
+        text-align: center;
+    }
+}
+@keyframes floatCard {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-14px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+.curved-cut::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: -320px;          /* push far into right panel */
+    width: 640px;           /* deep curve */
+    height: 100%;
+    background: linear-gradient(
+            to right,
+            #f9fafb 0%,
+            #f9fafb 60%,
+            rgba(249,250,251,0.0) 100%
+    );
+    border-radius: 50% 0 0 50%;
+    z-index: 10;
+    pointer-events: none;
+}
+
+@keyframes glowPulse {
+    0% {
+        box-shadow:
+                0 35px 120px rgba(22, 163, 74, 0.25),
+                0 0 40px rgba(22, 163, 74, 0.18);
+    }
+    50% {
+        box-shadow:
+                0 55px 180px rgba(22, 163, 74, 0.35),
+                0 0 70px rgba(22, 163, 74, 0.30);
+    }
+    100% {
+        box-shadow:
+                0 35px 120px rgba(22, 163, 74, 0.25),
+                0 0 40px rgba(22, 163, 74, 0.18);
+    }
+}

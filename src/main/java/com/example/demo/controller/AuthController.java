@@ -1,10 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.*;
-import com.example.demo.model.Bid;
-import com.example.demo.model.Order;
-import com.example.demo.model.Product;
-import com.example.demo.model.User;
+import com.example.demo.model.*;
 
 import com.example.demo.repository.BidRepository;
 import com.example.demo.repository.OrderRepository;
@@ -14,6 +11,7 @@ import com.example.demo.security.JwtUtil;
 import com.example.demo.service.UserService;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -57,9 +56,49 @@ public class AuthController {
         return passwordEncoder.encode("Sruthi@123");
     }
 
-    @PostMapping("/register")
-    public User register(@RequestBody RegisterRequest request) {
-        return userService.registerUser(request);
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> register(
+            @RequestParam String role,
+            @RequestParam String name,
+            @RequestParam String email,
+            @RequestParam String phone,
+            @RequestParam String address,
+            @RequestParam String city,
+            @RequestParam String state,
+            @RequestParam String pinCode,
+            @RequestParam(required = false) MultipartFile licenseFile,
+            @RequestParam(required = false) MultipartFile idProofFile
+    ) {
+
+        // 1️⃣ DUPLICATE CHECK
+        if (userRepository.existsByEmail(email)) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("User already registered");
+        }
+
+        // 2️⃣ CREATE USER
+        User user = new User();
+        user.setName(name);
+        user.setEmail(email);
+        user.setPhone(phone);
+        user.setRole(Role.valueOf(role));
+        user.setAddress(address);
+        user.setCity(city);
+        user.setState(state);
+        user.setPinCode(pinCode);
+
+        // 3️⃣ SET STATUS (THIS WAS MISSING)
+        user.setStatus(UserStatus.PENDING);
+
+        // 4️⃣ OPTIONAL FLAGS
+        user.setTemporaryPassword(true);
+        user.setCreatedAt(LocalDateTime.now());
+
+        // 5️⃣ SAVE USER (CRITICAL)
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Registered successfully. Await admin approval.");
     }
 
     @PostMapping("/login")
@@ -127,19 +166,6 @@ public class AuthController {
         return ResponseEntity.ok("PASSWORD_RESET_SUCCESS");
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(Principal principal) {
-        User user = userRepository.findByEmail(principal.getName()).orElse(null);
-
-        if (user == null)
-            return ResponseEntity.status(404).body("User not found");
-
-        return ResponseEntity.ok(Map.of(
-                "name", user.getName(),
-                "email", user.getEmail(),
-                "role", user.getRole().name()
-        ));
-    }
 
 
 

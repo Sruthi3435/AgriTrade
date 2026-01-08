@@ -156,7 +156,7 @@ public class BidController {
 
         // testing mode
         order.setOrderStatus("CONFIRMED");
-        order.setDeliveryStatus("PENDING");
+
 
         orderRepository.save(order);
 

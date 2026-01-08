@@ -1,69 +1,62 @@
-import { LogOut, Menu } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { NavLink } from "react-router-dom";
+import {
+    LayoutDashboard,
+    Clock,
+    CheckCircle,
+    XCircle,
+    BarChart3,
+    Settings,
+    LogOut
+} from "lucide-react";
+import { HelpCircle } from "lucide-react";
 
-export default function DashboardLayout({ title, role, children }) {
-    const navigate = useNavigate();
-    const [open, setOpen] = useState(false);
-
-    const logout = () => {
-        localStorage.removeItem("token");
-        navigate("/");
-    };
-
+export default function DashboardLayout({ children }) {
     return (
-        <div className="min-h-screen flex bg-gray-100">
-
-            {/* Mobile overlay */}
-            {open && (
-                <div
-                    className="fixed inset-0 bg-black/40 z-40 md:hidden"
-                    onClick={() => setOpen(false)}
-                />
-            )}
-
-            {/* Sidebar */}
-            <aside
-                className={`fixed md:static z-50 h-full w-64 bg-white shadow-lg transform transition-transform
-        ${open ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
-            >
-                <div className="px-6 py-4 text-2xl font-bold text-green-600 border-b">
+        <div className="flex min-h-screen bg-gray-100">
+            {/* SIDEBAR */}
+            <aside className="w-64 bg-white border-r px-4 py-6">
+                <h1 className="text-2xl font-bold text-green-600 mb-8">
                     AgroLink
-                </div>
+                </h1>
 
-                <div className="px-6 py-3 text-sm text-gray-500">
-                    {role} Dashboard
-                </div>
+                <nav className="space-y-2 text-sm">
+                    <NavItem to="/admin" icon={LayoutDashboard} label="Dashboard" />
+                    <NavItem to="/admin/pending" icon={Clock} label="Pending Users" />
 
-                {/* Logout */}
-                <div className="mt-auto p-4">
-                    <button
-                        onClick={logout}
-                        className="w-full flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
-                    >
-                        <LogOut size={18} />
-                        Logout
-                    </button>
-                </div>
+
+                    <NavItem to="/admin/help" icon={HelpCircle} label="Help & Support" />
+
+                    <NavItem to="/admin/settings" icon={Settings} label="Settings" />
+                </nav>
+
+                <button className="mt-10 flex items-center gap-2 text-red-500">
+                    <LogOut size={18} />
+                    Logout
+                </button>
             </aside>
 
-            {/* Main */}
-            <main className="flex-1 w-full">
-                {/* Mobile top bar */}
-                <div className="bg-white shadow px-4 py-3 flex items-center gap-3 md:hidden">
-                    <button onClick={() => setOpen(true)}>
-                        <Menu />
-                    </button>
-                    <h1 className="font-semibold">{title}</h1>
-                </div>
-
-                <div className="p-4 md:p-10">
-                    <h1 className="hidden md:block text-3xl font-bold mb-8">
-                        {title}
-                    </h1>
-                    {children}
-                </div>
+            {/* MAIN CONTENT */}
+            <main className="flex-1 p-8 overflow-y-auto">
+                {children}
             </main>
         </div>
+    );
+}
+
+function NavItem({ to, icon: Icon, label }) {
+    return (
+        <NavLink
+            to={to}
+            className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                    isActive
+                        ? "bg-green-100 text-green-700"
+                        : "text-gray-600 hover:bg-gray-100"
+                }`
+            }
+        >
+            <Icon size={18} />
+            {label}
+        </NavLink>
     );
 }

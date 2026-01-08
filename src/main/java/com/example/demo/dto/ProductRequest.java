@@ -15,4 +15,12 @@ public class ProductRequest {
     private String description;
     private LocalDateTime biddingStart;
     private LocalDateTime biddingEnd;
+
+
+        private Long orderId;
+        private String paymentId;
+
+        // getters & setters
+
+
 }

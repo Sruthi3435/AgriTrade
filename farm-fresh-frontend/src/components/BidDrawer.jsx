@@ -13,7 +13,8 @@ export default function BidDrawer({ open, onClose, product }) {
 
     const loadHighestBid = async () => {
         try {
-            const res = await api.get(`/bid/product/${product.id}/highest`);
+            // ✅ FIXED ENDPOINT
+            const res = await api.get(`/bid/highest/${product.id}`);
             setHighestBid(res.data.highest || null);
         } catch {
             setHighestBid(null);
@@ -28,7 +29,9 @@ export default function BidDrawer({ open, onClose, product }) {
         }
 
         try {
-            await api.post(`/bid/place/${product.id}`, { amount: Number(amount) });
+            await api.post(`/bid/place/${product.id}`, {
+                amount: Number(amount)
+            });
             alert("Bid placed successfully!");
             setAmount("");
             onClose();
@@ -37,16 +40,20 @@ export default function BidDrawer({ open, onClose, product }) {
         }
     };
 
-    if (!open) return null;
+    if (!open || !product) return null;
+
+    // ✅ FIX IMAGE HANDLING
+    const images = product.images?.split("|") || [];
+    const mainImage = images[0];
 
     return (
         <div className="fixed inset-0 z-40">
 
-            {/* Background dim (STARTS BELOW NAVBAR) */}
+            {/* Background overlay */}
             <div
                 className="absolute left-0 right-0"
                 style={{
-                    top: "72px",         // navbar height
+                    top: "72px",
                     height: "calc(100% - 72px)",
                     background: "rgba(0,0,0,0.4)"
                 }}
@@ -55,15 +62,14 @@ export default function BidDrawer({ open, onClose, product }) {
 
             {/* Drawer */}
             <div
-                className="absolute right-0 bg-white shadow-xl p-6 animate-slideLeft"
+                className="absolute right-0 bg-white shadow-xl p-6"
                 style={{
-                    top: "72px",               // below navbar
+                    top: "72px",
                     height: "calc(100% - 72px)",
                     width: "380px",
                     borderTopLeftRadius: "12px"
                 }}
             >
-                {/* Close */}
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 text-xl font-bold text-gray-500 hover:text-black"
@@ -74,10 +80,13 @@ export default function BidDrawer({ open, onClose, product }) {
                 <h2 className="text-2xl font-semibold mb-4">Place Bid</h2>
 
                 {/* IMAGE */}
-                <img
-                    src={product.images}
-                    className="w-full h-44 object-cover rounded-lg"
-                />
+                {mainImage && (
+                    <img
+                        src={mainImage}
+                        className="w-full h-44 object-cover rounded-lg"
+                        alt={product.name}
+                    />
+                )}
 
                 {/* DETAILS */}
                 <h3 className="text-xl font-semibold mt-4">{product.name}</h3>
@@ -100,61 +109,30 @@ export default function BidDrawer({ open, onClose, product }) {
 
                 <hr className="my-4" />
 
-
                 {/* BID INPUT */}
                 <label className="text-sm font-medium">Your Bid Amount</label>
 
                 <input
                     type="number"
-
-                    step="1"
                     value={amount}
                     onChange={(e) => {
                         const val = Number(e.target.value);
-
-                        // prevent values below base price
-                        if (val < product.price) {
-                            setAmount(product.price);
-                        } else {
-                            setAmount(val);
-                        }
+                        setAmount(val < product.price ? product.price : val);
                     }}
-                    className={`w-full border p-2 rounded mt-1 focus:ring-2 
-        ${amount < product.price ? "border-red-500 ring-red-300" : "border-gray-300"}`}
-                    style={{
-                        MozAppearance: "textfield"
-                    }}
-                    onWheel={(e) => e.target.blur()} // prevent wheel scroll
-                    onKeyDown={(e) => {
-                        if (e.key === "ArrowDown") e.preventDefault();
-                    }}
+                    className="w-full border p-2 rounded mt-1 focus:ring-2 focus:ring-green-500"
+                    onWheel={(e) => e.target.blur()}
                 />
 
-                {/* SHOW RED WARNING */}
-                {amount < product.price && (
-                    <p className="text-red-600 text-sm mt-1">
-                        Bid must be at least ₹{product.price}
-                    </p>
-                )}
-
-                {/* SUBMIT BUTTON */}
                 <button
-                    onClick={() => {
-                        if (amount < product.price) {
-                            alert(`Bid must be ≥ base price ₹${product.price}`);
-                            return;
-                        }
-                        placeBid();
-                    }}
+                    onClick={placeBid}
                     disabled={amount < product.price}
-                    className={`w-full py-2 mt-4 rounded-lg font-semibold 
-        ${amount < product.price
+                    className={`w-full py-2 mt-4 rounded-lg font-semibold
+                        ${amount < product.price
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-green-700 text-white hover:bg-green-800"}`}
                 >
                     Submit Bid
                 </button>
-
             </div>
         </div>
     );

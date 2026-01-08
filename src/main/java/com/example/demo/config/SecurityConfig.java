@@ -27,51 +27,45 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
+
+                        // ---------- PUBLIC ----------
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-
-                        // ADMIN
-                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers("/api/auth/me").authenticated()
+                        // Payment + Invoice (Cashfree needs this)
+                        .requestMatchers("/api/payment/**").permitAll()
                         .requestMatchers("/api/orders/invoice/**").permitAll()
 
+                        // ---------- COMMON AUTH ----------
+                        .requestMatchers("/api/users/me").authenticated()
+                        .requestMatchers("/api/users/update").authenticated()
+                        .requestMatchers("/api/auth/me").authenticated()
+                        // ---------- ADMIN ----------
+                        .requestMatchers("/api/admin/**").authenticated()
 
-
-                        // FARMER actions
+                        // ---------- FARMER ----------
                         .requestMatchers("/farmer/**").hasAuthority("ROLE_FARMER")
-
-                        .requestMatchers("/api/dashboard/**").hasAuthority("ROLE_FARMER")
                         .requestMatchers("/api/products/add").hasAuthority("ROLE_FARMER")
                         .requestMatchers("/api/products/my-products").hasAuthority("ROLE_FARMER")
                         .requestMatchers("/api/bid/accept/**").hasAuthority("ROLE_FARMER")
                         .requestMatchers("/api/bid/product/**").hasAuthority("ROLE_FARMER")
                         .requestMatchers("/api/orders/farmer/**").hasAuthority("ROLE_FARMER")
                         .requestMatchers("/api/bid/farmer/notifications").hasAuthority("ROLE_FARMER")
-                        .requestMatchers("/farmer/**").hasAuthority("ROLE_FARMER")
+                        .requestMatchers("/orders/update-delivery/**").hasAuthority("ROLE_FARMER")
 
-                        // RETAILER actions
+                        // ---------- RETAILER ----------
                         .requestMatchers("/api/bid/place/**").hasAuthority("ROLE_RETAILER")
                         .requestMatchers("/api/bid/notifications/**").hasAuthority("ROLE_RETAILER")
                         .requestMatchers("/api/bid/accepted").hasAuthority("ROLE_RETAILER")
                         .requestMatchers("/api/orders/retailer/**").hasAuthority("ROLE_RETAILER")
-
-                        .requestMatchers("/orders/update-delivery/**").hasAuthority("ROLE_FARMER")
                         .requestMatchers("/retailer/stats").hasAuthority("ROLE_RETAILER")
 
 
 
+                        // ---------- FALLBACK ----------
                         .anyRequest().authenticated()
                 )
-
-
-
-
-
-
-
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
 
         return http.build();
     }

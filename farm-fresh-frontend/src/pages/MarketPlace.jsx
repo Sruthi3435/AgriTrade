@@ -15,7 +15,11 @@ export default function Marketplace() {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
 
-    // Load all products
+    // Image modal state
+    const [imageModalOpen, setImageModalOpen] = useState(false);
+    const [activeImages, setActiveImages] = useState([]);
+    const [activeIndex, setActiveIndex] = useState(0);
+
     useEffect(() => {
         const loadProducts = async () => {
             const res = await api.get("/products/active");
@@ -38,31 +42,21 @@ export default function Marketplace() {
         loadProducts();
     }, []);
 
-    // Apply Search + Category Filters
     useEffect(() => {
         let data = [...products];
 
-        // CATEGORY FILTER
         if (category !== "All") {
             data = data.filter(
                 p => p.category?.toLowerCase() === category.toLowerCase()
             );
         }
 
-        // SEARCH FILTER
-        if (search.trim() !== "") {
+        if (search.trim()) {
             const s = search.toLowerCase();
-
             data = data.filter((p) => {
-                if (filterType === "product") {
-                    return p.name?.toLowerCase().includes(s);
-                }
-                if (filterType === "farmer") {
-                    return p.farmerName?.toLowerCase().includes(s);
-                }
-                if (filterType === "location") {
-                    return p.location?.toLowerCase().includes(s);
-                }
+                if (filterType === "product") return p.name?.toLowerCase().includes(s);
+                if (filterType === "farmer") return p.farmerName?.toLowerCase().includes(s);
+                if (filterType === "location") return p.location?.toLowerCase().includes(s);
                 return false;
             });
         }
@@ -75,16 +69,28 @@ export default function Marketplace() {
         setDrawerOpen(true);
     };
 
+    const openImageModal = (images, index = 0) => {
+        setActiveImages(images);
+        setActiveIndex(index);
+        setImageModalOpen(true);
+    };
+
+    const nextImage = () => {
+        setActiveIndex((i) => (i + 1) % activeImages.length);
+    };
+
+    const prevImage = () => {
+        setActiveIndex((i) => (i - 1 + activeImages.length) % activeImages.length);
+    };
+
     return (
         <RetailerLayout>
-            <div className="pt-24 px-8">
+            <div className="pt-2 px-8">
 
-                {/* TITLE */}
                 <h1 className="text-2xl font-semibold mb-6">Marketplace</h1>
 
                 {/* SEARCH + FILTERS */}
                 <div className="bg-white p-4 shadow rounded-xl flex flex-col sm:flex-row gap-4 mb-6">
-
                     <input
                         type="text"
                         placeholder="Search..."
@@ -115,62 +121,96 @@ export default function Marketplace() {
                         <option value="Spices">Spices</option>
                         <option value="Others">Others</option>
                     </select>
-
                 </div>
 
                 {/* PRODUCT GRID */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {filtered.map((p) => (
-                        <div
-                            key={p.id}
-                            className="bg-white rounded-xl shadow p-4 hover:shadow-lg transition border border-gray-100"
-                        >
-                            <img
-                                src={p.images}
-                                alt={p.name}
-                                className="w-full h-40 object-cover rounded-lg"
-                            />
+                    {filtered.map((p) => {
+                        const imgs = p.images?.split("|") || [];
 
-                            <h2 className="font-semibold text-lg mt-3">
-                                {p.name}
-                            </h2>
-
-                            <p className="text-sm text-gray-600">
-                                Category: {p.category}
-                            </p>
-
-                            <p className="text-sm text-gray-600">
-                                Qty: {p.quantity} {p.unit}
-                            </p>
-
-                            <p className="font-semibold text-gray-800">
-                                Base Price: ₹{p.price}
-                            </p>
-
-                            <p className="text-sm text-gray-700 mt-1">
-                                Farmer: <b>{p.farmerName}</b>
-                            </p>
-
-                            <p className="text-sm text-blue-700 font-medium mt-1">
-                                Highest Bid: ₹{p.highestBid ?? "—"}
-                            </p>
-
-                            <p className="text-sm text-red-600 mt-2">
-                                Ends in: <CountdownTimer endTime={p.biddingEnd} />
-                            </p>
-
-                            <button
-                                onClick={() => openBidDrawer(p)}
-                                className="w-full mt-3 bg-green-700 text-white py-2 rounded-lg hover:bg-green-800"
+                        return (
+                            <div
+                                key={p.id}
+                                className="bg-white rounded-xl shadow p-4 hover:shadow-lg transition border"
                             >
-                                Place Bid
-                            </button>
-                        </div>
-                    ))}
+                                <img
+                                    src={imgs[0]}
+                                    onClick={() => openImageModal(imgs, 0)}
+                                    className="w-full h-40 object-cover rounded-lg cursor-pointer"
+                                />
+
+                                <h2 className="font-semibold text-lg mt-3">{p.name}</h2>
+
+                                <p className="text-sm text-gray-600">Category: {p.category}</p>
+                                <p className="text-sm text-gray-600">Qty: {p.quantity} {p.unit}</p>
+
+                                <p className="font-semibold">₹{p.price}</p>
+
+                                <p className="text-sm mt-1">
+                                    Farmer: <b>{p.farmerName}</b>
+                                </p>
+
+                                <p className="text-blue-700 text-sm font-medium">
+                                    Highest Bid: ₹{p.highestBid ?? "—"}
+                                </p>
+
+                                <p className="text-red-600 text-sm mt-2">
+                                    Ends in: <CountdownTimer endTime={p.biddingEnd} />
+                                </p>
+
+                                <button
+                                    onClick={() => openBidDrawer(p)}
+                                    className="w-full mt-3 bg-green-700 text-white py-2 rounded-lg hover:bg-green-800"
+                                >
+                                    Place Bid
+                                </button>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* RIGHT DRAWER */}
+            {/* IMAGE MODAL */}
+            {imageModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+                    <button
+                        className="absolute top-6 right-6 text-white text-3xl"
+                        onClick={() => setImageModalOpen(false)}
+                    >
+                        ×
+                    </button>
+
+                    {/* IMAGE CONTAINER */}
+                    <div className="relative">
+                        <img
+                            src={activeImages[activeIndex]}
+                            className="max-h-[80vh] max-w-[80vw] rounded-xl"
+                        />
+
+                        {/* LEFT ARROW */}
+                        <button
+                            onClick={prevImage}
+                            className="absolute left-2 top-1/2 -translate-y-1/2
+                                       bg-black/60 text-white text-3xl px-3 py-1 rounded-full
+                                       hover:bg-black/80"
+                        >
+                            ‹
+                        </button>
+
+                        {/* RIGHT ARROW */}
+                        <button
+                            onClick={nextImage}
+                            className="absolute right-2 top-1/2 -translate-y-1/2
+                                       bg-black/60 text-white text-3xl px-3 py-1 rounded-full
+                                       hover:bg-black/80"
+                        >
+                            ›
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* BID DRAWER */}
             <BidDrawer
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}

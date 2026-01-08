@@ -34,6 +34,24 @@ public class Order {
     @Column(name = "status")
     private String orderStatus; // CONFIRMED, DELIVERED
 
-    @Column(name = "delivery_status")
-    private String deliveryStatus; // CONFIRMED, DELIVERED
+@Column (name="delivery_status")
+private String deliveryStatus;
+
+
+    @Column(name = "cashfree_order_id")
+    private String cashfreeOrderId;
+
+    @Column(name = "payment_status")
+    private String paymentStatus;
+
+     // PENDING, PAID
+    private String paymentMethod;   // UPI, CARD, NETBANKING
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
+    @Column(name = "payment_id")
+    private String paymentId;
+
 }
+
+
