@@ -1,13 +1,12 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.Order;
-import com.example.demo.model.Product;
-import com.example.demo.model.User;
+import com.example.demo.model.*;
 import com.example.demo.repository.OrderRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtUtil;
 
+import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -176,6 +175,50 @@ public class OrderController {
         invoice.put("finalPrice", order.getFinalPrice());
 
         return ResponseEntity.ok(invoice);
+    }@PostMapping("/confirm/buy/{productId}")
+    @Transactional
+    public ResponseEntity<?> buyNow(
+            @PathVariable Long productId,
+            @RequestHeader("Authorization") String token
+    ) {
+        // ✅ Extract retailer from JWT (CORRECT WAY)
+        String retailerEmail = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        // ✅ Only DIRECT products allowed
+        if (product.getTradeType() != TradeType.DIRECT) {
+            return ResponseEntity.badRequest().body("This product is not for direct purchase");
+        }
+
+        // ❌ Already sold
+        if (product.isClosed()) {
+            return ResponseEntity.badRequest().body("Product already sold");
+        }
+
+        // 🔒 Lock product
+        product.setClosed(true);
+        productRepository.save(product);
+
+        // ✅ Create order
+        Order order = new Order();
+        order.setProductId(product.getId());
+        order.setFarmerEmail(product.getFarmerEmail());
+        order.setRetailerEmail(retailerEmail);
+        order.setFinalPrice(product.getPrice());
+        order.setOrderStatus("CONFIRMED");
+        order.setDeliveryStatus("CONFIRMED");
+        order.setPaymentStatus("PENDING");
+        order.setRetailerPhone(order.getRetailerPhone());
+        order.setRetailerAddress(order.getRetailerAddress());
+
+        order.setCreatedAt(LocalDateTime.now());
+
+        orderRepository.save(order);
+
+        return ResponseEntity.ok(order.getId());
     }
+
 
 }

@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+
 public class User {
 
     @Id
@@ -22,13 +23,23 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
-
     private String phone;
 
-    private String password;
+    @JsonIgnore
+    private String password; // permanent password (hashed)
+
+    @JsonIgnore
+    @Column(name = "temp_password")
+    private String tempPassword; // TEMP password (hashed)
+
+    private boolean firstLogin = true;
+
+    @Column(name = "temp_password_expiry")
+    private LocalDateTime tempPasswordExpiry;
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
     private String address;
     private String city;
     private String state;
@@ -36,15 +47,10 @@ public class User {
 
     private String cropType;
     private String businessName;
-    @JsonIgnore
-    @Column(name = "temporary_password")
-    private boolean temporaryPassword;
-
-    @Column(name = "temp_password_expiry")
-    private LocalDateTime tempPasswordExpiry;
 
     @Enumerated(EnumType.STRING)
     private UserStatus status;
+
     @JsonIgnore
     private LocalDateTime createdAt = LocalDateTime.now();
 }

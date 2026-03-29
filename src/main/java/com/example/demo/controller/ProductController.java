@@ -1,13 +1,14 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.Product;
+import com.example.demo.model.*;
 
-import com.example.demo.model.User;
 import com.example.demo.repository.BidRepository;
+import com.example.demo.repository.OrderRepository;
 import com.example.demo.repository.ProductRepository;
 
 import com.example.demo.repository.UserRepository;
 
+import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,30 +27,38 @@ public class ProductController {
     private final BidRepository bidRepository;
 private final UserRepository userRepository;
     private final ProductRepository productRepository;
+private final OrderRepository orderRepository;
 
-
-    public ProductController(ProductRepository productRepository,  UserRepository  userRepository,BidRepository bidRepository) {
+    public ProductController(ProductRepository productRepository,  UserRepository  userRepository,OrderRepository orderRepository,BidRepository bidRepository) {
         this.productRepository = productRepository;
         this.bidRepository = bidRepository;
         this.userRepository=userRepository;
+        this.orderRepository=orderRepository;
     }
 
-    // ➤ Add new product
     @PostMapping("/add")
     public ResponseEntity<?> addProduct(@RequestBody Product product, Principal principal) {
 
-        String email = principal.getName(); // token extracted automatically
+        product.setFarmerEmail(principal.getName());
+        product.setStatus(ProductStatus.ACTIVE);
 
-        product.setFarmerEmail(email);
-        product.setClosed(false);
-        product.setBiddingStart(LocalDateTime.now());
+        if (product.getTradeType() == TradeType.AUCTION) {
 
-        // DO NOT force expiry yet
-         product.getBiddingEnd();
+            if (product.getBiddingEnd() == null) {
+                return ResponseEntity.badRequest()
+                        .body("Bidding end time required for auction");
+            }
+
+            product.setBiddingStart(LocalDateTime.now());
+
+        } else {
+            // DIRECT TRADE
+            product.setBiddingStart(null);
+            product.setBiddingEnd(null);
+        }
 
         productRepository.save(product);
-
-        return ResponseEntity.ok("Product added!");
+        return ResponseEntity.ok("Product added");
     }
 
     @GetMapping("/active")
@@ -67,6 +76,7 @@ private final UserRepository userRepository;
             m.put("unit", p.getUnit());
             m.put("price", p.getPrice());
             m.put("location", p.getLocation());
+            m.put("trade_type", p.getTradeType().name());
             m.put("biddingEnd", p.getBiddingEnd());
             m.put("images", p.getImages());
             m.put("farmerEmail", p.getFarmerEmail());
@@ -102,6 +112,8 @@ private final UserRepository userRepository;
             map.put("unit", p.getUnit());
             map.put("location", p.getLocation());
             map.put("images", p.getImages());
+            map.put("tradeType", p.getTradeType().name());
+
             map.put("biddingEnd", p.getBiddingEnd());
             map.put("closed", p.isClosed());
             map.put("highestBid", highestBid);

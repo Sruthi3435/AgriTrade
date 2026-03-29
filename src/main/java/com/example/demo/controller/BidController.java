@@ -37,6 +37,7 @@ public class BidController {
             @RequestBody Bid bidRequest,
             Principal principal
     ) {
+
         String retailerEmail = principal.getName();
 
         Product product = productRepository.findById(productId)
@@ -44,6 +45,19 @@ public class BidController {
 
         double basePrice = product.getPrice();
         double bidAmount = bidRequest.getAmount();
+        if (product.getTradeType() == TradeType.DIRECT) {
+            return ResponseEntity.badRequest()
+                    .body("Bidding not allowed for direct trade products");
+        }
+        if (product.getTradeType() != TradeType.AUCTION) {
+            return ResponseEntity.badRequest()
+                    .body("Bidding not allowed for direct trade products");
+        }
+
+        if (product.getStatus() != ProductStatus.ACTIVE) {
+            return ResponseEntity.badRequest()
+                    .body("Auction already closed");
+        }
 
         // ❌ 1️⃣ Reject if bid < base price
         if (bidAmount < basePrice) {
@@ -55,6 +69,10 @@ public class BidController {
         if (bidRepository.existsByProductIdAndRetailerEmail(productId, retailerEmail)) {
             return ResponseEntity.badRequest()
                     .body("You have already placed a bid on this product.");
+        }
+        if (product.getStatus() != ProductStatus.ACTIVE) {
+            return ResponseEntity.badRequest()
+                    .body("Product is no longer available");
         }
 
         // ✔ SAVE BID

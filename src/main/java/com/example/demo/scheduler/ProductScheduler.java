@@ -1,43 +1,58 @@
 package com.example.demo.scheduler;
 
-
-import com.example.demo.model.Product;
-import com.example.demo.model.Order;
-import com.example.demo.repository.ProductRepository;
-import com.example.demo.repository.BidRepository;
-import com.example.demo.repository.OrderRepository;
+import com.example.demo.model.*;
+import com.example.demo.repository.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class ProductScheduler {
 
-    private final ProductRepository productRepo;
-    private final BidRepository bidRepo;
-    private final OrderRepository orderRepo;
+    private final ProductRepository productRepository;
+    private final BidRepository bidRepository;
+    private final OrderRepository orderRepository;
 
-    public ProductScheduler(ProductRepository productRepo,
-                            BidRepository bidRepo,
-                            OrderRepository orderRepo) {
-        this.productRepo = productRepo;
-        this.bidRepo = bidRepo;
-        this.orderRepo = orderRepo;
+    public ProductScheduler(ProductRepository productRepository,
+                            BidRepository bidRepository,
+                            OrderRepository orderRepository) {
+        this.productRepository = productRepository;
+        this.bidRepository = bidRepository;
+        this.orderRepository = orderRepository;
     }
 
+    // Runs every minute
     @Scheduled(fixedRate = 60000)
-    public void closeExpiredBids() {
-        List<Product> active = productRepo.findByClosedFalse();
+    public void closeExpiredAuctions() {
 
-        for (Product p : active) {
-            if (p.getBiddingEnd() != null && LocalDateTime.now().isAfter(p.getBiddingEnd())) {
-                p.setClosed(true);
-                productRepo.save(p);
+        List<Product> expiredAuctions =
+                productRepository.findExpiredAuctions(
+                        TradeType.AUCTION,
+                        ProductStatus.ACTIVE,
+                        LocalDateTime.now()
+                );
+
+        for (Product product : expiredAuctions) {
+
+            Bid highestBid =
+                    bidRepository.findTopByProductIdOrderByAmountDesc(product.getId())
+                            .orElse(null);
+
+            product.setStatus(ProductStatus.CLOSED);
+            productRepository.save(product);
+
+            if (highestBid != null) {
+                Order order = new Order();
+                order.setProductId(product.getId());
+                order.setFarmerEmail(product.getFarmerEmail());
+                order.setRetailerEmail(highestBid.getRetailerEmail());
+                order.setFinalPrice(highestBid.getAmount());
+                order.setOrderStatus("CONFIRMED");
+
+                orderRepository.save(order);
             }
         }
     }
-
 }

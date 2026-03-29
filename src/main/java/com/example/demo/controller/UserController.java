@@ -26,7 +26,7 @@ public class UserController {
     }
 
     // 🔹 UPDATE logged-in user details
-    @PutMapping("/me")
+    @PutMapping("/update")
     public User updateMyProfile(
             Authentication authentication,
             @RequestBody User req

@@ -46,8 +46,8 @@ public class AdminServiceImpl implements AdminService {
 
         System.out.println("Temp password: " + tempPassword);
 
-        user.setPassword(passwordEncoder.encode(tempPassword));
-        user.setTemporaryPassword(true);
+
+        user.setTempPassword(passwordEncoder.encode(tempPassword));
         user.setTempPasswordExpiry(LocalDateTime.now().plusHours(24));
         user.setStatus(UserStatus.APPROVED);
 

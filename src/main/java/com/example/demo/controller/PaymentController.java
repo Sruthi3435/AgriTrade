@@ -1,9 +1,12 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.Order;
+import com.example.demo.model.Product;
+import com.example.demo.model.ProductStatus;
 import com.example.demo.repository.OrderRepository;
 
 
+import com.example.demo.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +23,7 @@ public class PaymentController {
 
     private final OrderRepository orderRepo;
     private final RestTemplate restTemplate = new RestTemplate();
-
+private final ProductRepository productRepository;
     @Value("${cashfree.app-id}")
     private String appId;
 
@@ -30,8 +33,9 @@ public class PaymentController {
     @Value("${cashfree.base-url}")
     private String baseUrl;
 
-    public PaymentController(OrderRepository orderRepo) {
+    public PaymentController(OrderRepository orderRepo,ProductRepository productRepository) {
         this.orderRepo = orderRepo;
+        this.productRepository=productRepository;
     }
 
 
@@ -109,21 +113,33 @@ public class PaymentController {
                 entity,
                 Map.class
         );
-        System.out.println("Cashfree response = " + response.getBody());
+
         String orderStatus = (String) response.getBody().get("order_status");
 
-
-
-
-        if ("PAID".equals(orderStatus)) {
-            order.setPaymentStatus("PAID");
-            order.setPaidAt(LocalDateTime.now());
-            order.setDeliveryStatus("READY");
-            orderRepo.save(order);
+        // ✅ ONLY CHECK CASHFREE STATUS
+        if (!"PAID".equals(orderStatus)) {
+            return ResponseEntity.ok("Payment pending");
         }
 
-        return ResponseEntity.ok("Payment verified");
+        // ✅ UPDATE ORDER
+        order.setPaymentStatus("PAID");
+        order.setPaidAt(LocalDateTime.now());
+        order.setOrderStatus("CONFIRMED");
+        order.setDeliveryStatus("READY");
+
+        // ✅ UPDATE PRODUCT
+        Product product = productRepository
+                .findById(order.getProductId())
+                .orElseThrow();
+
+        product.setStatus(ProductStatus.SOLD);
+
+        productRepository.save(product);
+        orderRepo.save(order);
+
+        return ResponseEntity.ok("Payment verified and updated");
     }
+
 
     @GetMapping("/mark-paid/{orderId}")
     public ResponseEntity<?> markPaid(@PathVariable Long orderId) {

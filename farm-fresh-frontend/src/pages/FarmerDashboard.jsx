@@ -60,7 +60,7 @@ export default function FarmerDashboard() {
 
     return (
         <FarmerLayout>
-            <div className="pt-24 px-10">
+            <div className="pt-6 px-10">
 
                 {/* ---------- HEADER ---------- */}
                 <div className="mb-8">

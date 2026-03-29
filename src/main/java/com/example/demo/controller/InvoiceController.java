@@ -1,4 +1,6 @@
 package com.example.demo.controller;
+import com.example.demo.dto.InvoiceDTO;
+import com.example.demo.service.InvoiceService;
 import com.lowagie.text.*;
 import com.lowagie.text.Font;
 import com.lowagie.text.Rectangle;
@@ -28,13 +30,15 @@ public class InvoiceController {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-
+private final InvoiceService invoiceService;
     public InvoiceController(OrderRepository orderRepository,
                              ProductRepository productRepository,
-                             UserRepository userRepository) {
+                             UserRepository userRepository,
+                             InvoiceService invoiceService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.invoiceService= invoiceService;
     }
 
     @GetMapping("download/invoice/{orderId}")
@@ -150,4 +154,10 @@ public class InvoiceController {
         header.setPadding(8);
         table.addCell(header);
     }
+    @GetMapping("/invoice/preview/{orderId}")
+    public InvoiceDTO getInvoicePreview(@PathVariable Long orderId) {
+        return invoiceService.buildInvoicePreview(orderId);
+    }
+
+
 }

@@ -26,7 +26,15 @@ public class Product {
     @Column(columnDefinition = "LONGTEXT")
     private String images;
 
-  
+    @Enumerated(EnumType.STRING)
+    @Column(name = "trade_type", nullable = false)
+    private TradeType tradeType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private ProductStatus status = ProductStatus.ACTIVE;
+
+
 
     // NEW
     private LocalDateTime biddingStart;
@@ -34,4 +42,14 @@ public class Product {
     private boolean closed = false;
 
     private String farmerEmail;
+
+    @PrePersist
+    @PreUpdate
+    private void syncLegacyClosed() {
+        if (this.status == ProductStatus.CLOSED || this.status == ProductStatus.SOLD) {
+            this.closed = true;
+        } else {
+            this.closed = false;
+        }
+    }
 }

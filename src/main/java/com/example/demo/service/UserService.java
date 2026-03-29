@@ -5,14 +5,15 @@ import com.example.demo.model.User;
 
 public interface UserService {
 
+
+
     User registerUser(RegisterRequest request);
-
-
-        User verifyTempPassword(String email, String tempPassword);
-
 
 
     User findByEmail(String email);
 
+    void approveUser(Long userId);
+
+    void resetPassword(String email, String newPassword);
 
 }

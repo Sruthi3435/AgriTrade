@@ -95,7 +95,7 @@ export default function Register() {
                 headers: { "Content-Type": "multipart/form-data" }
             });
 
-            navigate("/pending-approval");
+            navigate("/login");
         } catch (err) {
             if (err.response?.status === 409) {
                 setError("User already registered");
@@ -264,28 +264,50 @@ export default function Register() {
                                 </>
                             )}
 
-                            {/* STEP 4 */}
                             {step === 4 && (
                                 <>
-                                    {form.role === "FARMER" && (
-                                        <input
-                                            type="file"
-                                            name="idProofFile"
-                                            onChange={handleFileChange}
-                                            className="w-full p-3 border rounded-lg"
-                                        />
-                                    )}
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        {form.role === "FARMER" ? "Government ID Proof" : "Business License Document"}
+                                    </label>
 
-                                    {form.role === "RETAILER" && (
-                                        <input
-                                            type="file"
-                                            name="licenseFile"
-                                            onChange={handleFileChange}
-                                            className="w-full p-3 border rounded-lg"
-                                        />
-                                    )}
+                                    <div className="border-2 border-dashed border-gray-400 rounded-xl p-6 cursor-pointer hover:border-green-500 transition"
+                                         onClick={() => document.getElementById("fileUpload").click()}
+                                    >
+                                        <div className="flex flex-col items-center text-gray-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none" viewBox="0 0 24 24" strokeWidth={2}
+                                                 stroke="currentColor" className="w-10 h-10 mb-2 text-green-600">
+                                                <path strokeLinecap="round" strokeLinejoin="round"
+                                                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 8l-4-4m0 0L8 8m4-4v12" />
+                                            </svg>
 
-                                    <div className="flex gap-3">
+                                            <p className="font-medium">
+                                                Click to upload {form.role === "FARMER" ? "Govt ID" : "Business License"}
+                                            </p>
+
+                                            {form.idProofFile || form.licenseFile ? (
+                                                <p className="mt-2 text-green-600 text-sm font-semibold">
+                                                    {form.role === "FARMER"
+                                                        ? form.idProofFile?.name
+                                                        : form.licenseFile?.name}
+                                                </p>
+                                            ) : (
+                                                <p className="text-sm text-gray-500 mt-1">
+                                                    Supported formats: JPG, PNG, PDF
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <input
+                                        id="fileUpload"
+                                        type="file"
+                                        name={form.role === "FARMER" ? "idProofFile" : "licenseFile"}
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                    />
+
+                                    <div className="flex gap-3 mt-6">
                                         <button
                                             type="button"
                                             onClick={prevStep}
@@ -303,6 +325,7 @@ export default function Register() {
                                     </div>
                                 </>
                             )}
+
 
                         </form>
                     </div>

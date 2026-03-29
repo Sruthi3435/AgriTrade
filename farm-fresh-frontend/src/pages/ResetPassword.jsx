@@ -9,10 +9,17 @@ export default function ResetPassword() {
     const [confirm, setConfirm] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
-    const email = localStorage.getItem("verifiedEmail");
+
+    // ✅ FIXED KEY
+    const email = localStorage.getItem("pendingEmail");
 
     const submit = async (e) => {
         e.preventDefault();
+
+        if (!email) {
+            setError("Session expired. Please login again.");
+            return;
+        }
 
         if (password !== confirm) {
             setError("Passwords do not match");
@@ -24,9 +31,10 @@ export default function ResetPassword() {
                 email,
                 newPassword: password,
             });
-            localStorage.removeItem("pendingEmail");
 
+            localStorage.removeItem("pendingEmail");
             navigate("/login");
+
         } catch {
             setError("Failed to reset password");
         }
@@ -53,8 +61,6 @@ export default function ResetPassword() {
                 )}
 
                 <form onSubmit={submit} className="space-y-4">
-
-
                     <input
                         type="password"
                         placeholder="New Password"

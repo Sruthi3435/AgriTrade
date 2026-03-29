@@ -1,25 +1,41 @@
 import RetailerLayout from "../components/RetailerLayout";
 import { useEffect, useState } from "react";
 import api from "../services/api";
-import CountdownTimer from "../components/CountdownTimer.jsx";
 import BidDrawer from "../components/BidDrawer";
 
 export default function Marketplace() {
+
+    /* ======================
+       DATA
+       ====================== */
     const [products, setProducts] = useState([]);
     const [filtered, setFiltered] = useState([]);
 
+    /* ======================
+       FILTERS
+       ====================== */
     const [search, setSearch] = useState("");
     const [filterType, setFilterType] = useState("product");
     const [category, setCategory] = useState("All");
+    const [tradeView, setTradeView] = useState("DIRECT");
 
+    /* ======================
+       AUCTION
+       ====================== */
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
 
-    // Image modal state
-    const [imageModalOpen, setImageModalOpen] = useState(false);
-    const [activeImages, setActiveImages] = useState([]);
-    const [activeIndex, setActiveIndex] = useState(0);
+    /* ======================
+       BUY NOW
+       ====================== */
+    const [confirmBuyProduct, setConfirmBuyProduct] = useState(null);
+    const [buying, setBuying] = useState(false);
+    const [successOrderId, setSuccessOrderId] = useState(null);
+    const [error, setError] = useState("");
 
+    /* ======================
+       LOAD PRODUCTS
+       ====================== */
     useEffect(() => {
         const loadProducts = async () => {
             const res = await api.get("/products/active");
@@ -28,7 +44,7 @@ export default function Marketplace() {
                 res.data.map(async (p) => {
                     try {
                         const bidRes = await api.get(`/bid/highest/${p.id}`);
-                        return { ...p, highestBid: bidRes.data.highest || null };
+                        return { ...p, highestBid: bidRes.data || null };
                     } catch {
                         return { ...p, highestBid: null };
                     }
@@ -42,8 +58,15 @@ export default function Marketplace() {
         loadProducts();
     }, []);
 
+    /* ======================
+       FILTER LOGIC
+       ====================== */
     useEffect(() => {
         let data = [...products];
+
+        data = data.filter(
+            p => (p.trade_type ?? "DIRECT").trim().toUpperCase() === tradeView
+        );
 
         if (category !== "All") {
             data = data.filter(
@@ -53,7 +76,7 @@ export default function Marketplace() {
 
         if (search.trim()) {
             const s = search.toLowerCase();
-            data = data.filter((p) => {
+            data = data.filter(p => {
                 if (filterType === "product") return p.name?.toLowerCase().includes(s);
                 if (filterType === "farmer") return p.farmerName?.toLowerCase().includes(s);
                 if (filterType === "location") return p.location?.toLowerCase().includes(s);
@@ -62,155 +85,169 @@ export default function Marketplace() {
         }
 
         setFiltered(data);
-    }, [search, category, filterType, products]);
+    }, [products, tradeView, category, search, filterType]);
 
-    const openBidDrawer = (product) => {
-        setSelectedProduct(product);
-        setDrawerOpen(true);
-    };
+    /* ======================
+       BUY NOW ACTION (FIXED)
+       ====================== */
+    const confirmBuyNow = async () => {
+        if (!confirmBuyProduct) return;
 
-    const openImageModal = (images, index = 0) => {
-        setActiveImages(images);
-        setActiveIndex(index);
-        setImageModalOpen(true);
-    };
+        try {
+            setBuying(true);
+            setError("");
 
-    const nextImage = () => {
-        setActiveIndex((i) => (i + 1) % activeImages.length);
-    };
+            const res = await api.post(`/orders/buy/${confirmBuyProduct.id}`);
+            setSuccessOrderId(res.data);
 
-    const prevImage = () => {
-        setActiveIndex((i) => (i - 1 + activeImages.length) % activeImages.length);
+            // ✅ MARK PRODUCT AS CLOSED (DO NOT REMOVE)
+            setProducts(prev =>
+                prev.map(p =>
+                    p.id === confirmBuyProduct.id
+                        ? { ...p, closed: true }
+                        : p
+                )
+            );
+
+            setConfirmBuyProduct(null);
+        } catch (err) {
+            setError(err.response?.data || "Unable to place order");
+        } finally {
+            setBuying(false);
+        }
     };
 
     return (
         <RetailerLayout>
-            <div className="pt-2 px-8">
+            <div className="pt-4 px-8">
 
                 <h1 className="text-2xl font-semibold mb-6">Marketplace</h1>
 
-                {/* SEARCH + FILTERS */}
-                <div className="bg-white p-4 shadow rounded-xl flex flex-col sm:flex-row gap-4 mb-6">
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="border p-3 rounded w-full sm:w-1/3"
-                    />
-
-                    <select
-                        value={filterType}
-                        onChange={(e) => setFilterType(e.target.value)}
-                        className="border p-3 rounded w-full sm:w-1/4"
+                {/* TOGGLE */}
+                <div className="mb-6 flex gap-4">
+                    <button
+                        onClick={() => setTradeView("DIRECT")}
+                        className={`px-6 py-2 rounded ${tradeView === "DIRECT" ? "bg-green-600 text-white" : "border"}`}
                     >
-                        <option value="product">Product Name</option>
-                        <option value="farmer">Farmer Name</option>
-                        <option value="location">Location</option>
-                    </select>
-
-                    <select
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        className="border p-3 rounded w-full sm:w-1/4"
+                        Buy Now
+                    </button>
+                    <button
+                        onClick={() => setTradeView("AUCTION")}
+                        className={`px-6 py-2 rounded ${tradeView === "AUCTION" ? "bg-blue-600 text-white" : "border"}`}
                     >
-                        <option value="All">All Categories</option>
-                        <option value="Vegetables">Vegetables</option>
-                        <option value="Fruits">Fruits</option>
-                        <option value="Grains">Grains</option>
-                        <option value="Spices">Spices</option>
-                        <option value="Others">Others</option>
-                    </select>
+                        Bid & Compete
+                    </button>
                 </div>
 
-                {/* PRODUCT GRID */}
+                {/* GRID */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {filtered.map((p) => {
-                        const imgs = p.images?.split("|") || [];
+                    {filtered.map(p => {
+                        const tradeType = (p.trade_type ?? "DIRECT").trim().toUpperCase();
 
                         return (
                             <div
                                 key={p.id}
-                                className="bg-white rounded-xl shadow p-4 hover:shadow-lg transition border"
+                                className={`relative bg-white p-4 rounded-xl shadow
+                                ${p.closed ? "opacity-60" : ""}`}
                             >
+                                {/* OUT OF STOCK BADGE */}
+                                {p.closed && (
+                                    <span className="absolute top-3 left-3 bg-red-100 text-red-700
+                                                     text-xs px-3 py-1 rounded-full font-semibold">
+                                        Out of Stock
+                                    </span>
+                                )}
+
                                 <img
-                                    src={imgs[0]}
-                                    onClick={() => openImageModal(imgs, 0)}
-                                    className="w-full h-40 object-cover rounded-lg cursor-pointer"
+                                    src={p.images?.split("|")[0]}
+                                    className="h-40 w-full object-cover rounded"
                                 />
 
-                                <h2 className="font-semibold text-lg mt-3">{p.name}</h2>
+                                <h2 className="font-semibold mt-2">{p.name}</h2>
+                                <p>₹{p.price}</p>
 
-                                <p className="text-sm text-gray-600">Category: {p.category}</p>
-                                <p className="text-sm text-gray-600">Qty: {p.quantity} {p.unit}</p>
-
-                                <p className="font-semibold">₹{p.price}</p>
-
-                                <p className="text-sm mt-1">
-                                    Farmer: <b>{p.farmerName}</b>
-                                </p>
-
-                                <p className="text-blue-700 text-sm font-medium">
-                                    Highest Bid: ₹{p.highestBid ?? "—"}
-                                </p>
-
-                                <p className="text-red-600 text-sm mt-2">
-                                    Ends in: <CountdownTimer endTime={p.biddingEnd} />
-                                </p>
-
-                                <button
-                                    onClick={() => openBidDrawer(p)}
-                                    className="w-full mt-3 bg-green-700 text-white py-2 rounded-lg hover:bg-green-800"
-                                >
-                                    Place Bid
-                                </button>
+                                {tradeType === "DIRECT" ? (
+                                    <button
+                                        disabled={p.closed}
+                                        onClick={() => setConfirmBuyProduct(p)}
+                                        className={`w-full mt-3 py-2 rounded font-medium
+                                            ${p.closed
+                                            ? "bg-gray-400 cursor-not-allowed text-white"
+                                            : "bg-green-600 hover:bg-green-700 text-white"}`}
+                                    >
+                                        {p.closed ? "Out of Stock" : "Buy Now"}
+                                    </button>
+                                ) : (
+                                    <button
+                                        disabled={p.closed}
+                                        onClick={() => {
+                                            setSelectedProduct(p);
+                                            setDrawerOpen(true);
+                                        }}
+                                        className={`w-full mt-3 py-2 rounded
+                                            ${p.closed
+                                            ? "bg-gray-400 cursor-not-allowed text-white"
+                                            : "bg-blue-600 hover:bg-blue-700 text-white"}`}
+                                    >
+                                        {p.closed ? "Auction Closed" : "Place Bid"}
+                                    </button>
+                                )}
                             </div>
                         );
                     })}
                 </div>
             </div>
 
-            {/* IMAGE MODAL */}
-            {imageModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
-                    <button
-                        className="absolute top-6 right-6 text-white text-3xl"
-                        onClick={() => setImageModalOpen(false)}
-                    >
-                        ×
-                    </button>
+            {/* CONFIRM BUY MODAL */}
+            {confirmBuyProduct && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-xl w-full max-w-md">
+                        <h2 className="text-lg font-semibold mb-2">Confirm Purchase</h2>
+                        <p className="text-sm text-gray-600 mb-4">
+                            Buy <b>{confirmBuyProduct.name}</b> for ₹{confirmBuyProduct.price}?
+                        </p>
 
-                    {/* IMAGE CONTAINER */}
-                    <div className="relative">
-                        <img
-                            src={activeImages[activeIndex]}
-                            className="max-h-[80vh] max-w-[80vw] rounded-xl"
-                        />
+                        {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
 
-                        {/* LEFT ARROW */}
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setConfirmBuyProduct(null)}
+                                className="px-4 py-2 border rounded"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                disabled={buying}
+                                onClick={confirmBuyNow}
+                                className="px-4 py-2 bg-green-600 text-white rounded"
+                            >
+                                {buying ? "Processing..." : "Confirm"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* SUCCESS MODAL */}
+            {successOrderId && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-xl text-center">
+                        <h2 className="text-green-600 text-xl font-semibold mb-2">
+                            Order Placed Successfully
+                        </h2>
+                        <p className="text-sm text-gray-600 mb-4">
+                            Order ID: {successOrderId}
+                        </p>
                         <button
-                            onClick={prevImage}
-                            className="absolute left-2 top-1/2 -translate-y-1/2
-                                       bg-black/60 text-white text-3xl px-3 py-1 rounded-full
-                                       hover:bg-black/80"
+                            onClick={() => setSuccessOrderId(null)}
+                            className="px-6 py-2 bg-green-600 text-white rounded"
                         >
-                            ‹
-                        </button>
-
-                        {/* RIGHT ARROW */}
-                        <button
-                            onClick={nextImage}
-                            className="absolute right-2 top-1/2 -translate-y-1/2
-                                       bg-black/60 text-white text-3xl px-3 py-1 rounded-full
-                                       hover:bg-black/80"
-                        >
-                            ›
+                            OK
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* BID DRAWER */}
             <BidDrawer
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}

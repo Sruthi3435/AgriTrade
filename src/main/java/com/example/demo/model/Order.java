@@ -16,6 +16,9 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String retailerName;
+    private String retailerPhone;
+    private String retailerAddress;
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 

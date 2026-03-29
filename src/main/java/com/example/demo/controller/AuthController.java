@@ -2,60 +2,27 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.*;
 import com.example.demo.model.*;
-
-import com.example.demo.repository.BidRepository;
-import com.example.demo.repository.OrderRepository;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.scheduler.ProductScheduler;
 import com.example.demo.security.JwtUtil;
-import com.example.demo.service.UserService;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import com.example.demo.repository.ProductRepository;
-
-import java.security.Principal;
-import java.time.LocalDateTime;
-import java.util.*;
-
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDateTime;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-
+@RequiredArgsConstructor
 public class AuthController {
 
-    private final JwtUtil jwtUtil;
-    private final UserService userService;
-    private final ProductRepository productRepository;
-    private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final BidRepository bidRepo;
-    private final ProductScheduler productScheduler;
-    private final OrderRepository orderRepository;
-    public AuthController(UserService userService,BidRepository bidRepo,
-                          ProductScheduler productScheduler,OrderRepository orderRepository, PasswordEncoder passwordEncoder,JwtUtil jwtUtil,UserRepository userRepository,ProductRepository productRepository) {
-        this.userService = userService;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
-        this.userRepository = userRepository;
-        this.productRepository= productRepository;
-        this.bidRepo = bidRepo;
-        this.productScheduler= productScheduler;
-        this.orderRepository = orderRepository;
-    }
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
-    @GetMapping("/test")
-    public String test() {
-        return passwordEncoder.encode("Sruthi@123");
-    }
-
+    // REGISTER
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> register(
             @RequestParam String role,
@@ -70,14 +37,11 @@ public class AuthController {
             @RequestParam(required = false) MultipartFile idProofFile
     ) {
 
-        // 1️⃣ DUPLICATE CHECK
         if (userRepository.existsByEmail(email)) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
+            return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("User already registered");
         }
 
-        // 2️⃣ CREATE USER
         User user = new User();
         user.setName(name);
         user.setEmail(email);
@@ -88,33 +52,49 @@ public class AuthController {
         user.setState(state);
         user.setPinCode(pinCode);
 
-        // 3️⃣ SET STATUS (THIS WAS MISSING)
         user.setStatus(UserStatus.PENDING);
+        user.setPassword(null);
+        user.setTempPassword(null);
+        user.setFirstLogin(true);
 
-        // 4️⃣ OPTIONAL FLAGS
-        user.setTemporaryPassword(true);
-        user.setCreatedAt(LocalDateTime.now());
-
-        // 5️⃣ SAVE USER (CRITICAL)
         userRepository.save(user);
 
-        return ResponseEntity.ok("Registered successfully. Await admin approval.");
+        return ResponseEntity.ok("Registered. Await admin approval.");
     }
 
+    // LOGIN
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
 
-        User user = userService.findByEmail(request.getEmail());
+        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
 
-        if (user == null || user.getPassword() == null ||
-                !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Invalid credentials");
         }
 
-        if (user.isTemporaryPassword()) {
+        if (user.getStatus() != UserStatus.APPROVED) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("TEMP_PASSWORD");
+                    .body("ACCOUNT_NOT_APPROVED");
+        }
+
+        // FIRST LOGIN → TEMP PASSWORD
+        if (user.isFirstLogin()) {
+
+            if (user.getTempPassword() == null ||
+                    !passwordEncoder.matches(request.getPassword(), user.getTempPassword())) {
+
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("INVALID_TEMP_PASSWORD");
+            }
+
+            return ResponseEntity.ok(Map.of("status", "FIRST_LOGIN"));
+        }
+
+        // NORMAL LOGIN
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid credentials");
         }
 
         String token = jwtUtil.generateToken(
@@ -122,52 +102,29 @@ public class AuthController {
                 user.getRole().name()
         );
 
-        return ResponseEntity.ok(token);
-    }
-    @PostMapping("/verify-temp-password")
-    public ResponseEntity<?> verifyTempPassword(
-            @RequestBody TempPasswordRequest req) {
-
-        System.out.println(
-                "VERIFY BACKEND → email=" + req.getEmail() +
-                        ", temp=" + req.getTempPassword()
-        );
-
-        try {
-            userService.verifyTempPassword(req.getEmail(), req.getTempPassword());
-            return ResponseEntity.ok("VERIFIED");
-        } catch (RuntimeException ex) {
-            System.out.println("VERIFY BACKEND ERROR → " + ex.getMessage());
-            return ResponseEntity.badRequest().body(ex.getMessage());
-        }
-
+        return ResponseEntity.ok(Map.of(
+                "status", "SUCCESS",
+                "token", token
+        ));
     }
 
-
-
-
-
-
+    // SET NEW PASSWORD (FIRST LOGIN ONLY)
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest req) {
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest req) {
 
-        User user = userService.findByEmail(req.getEmail());
+        User user = userRepository.findByEmail(req.getEmail()).orElse(null);
 
-        if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
+        if (user == null || !user.isFirstLogin()) {
+            return ResponseEntity.badRequest().body("Invalid request");
         }
 
         user.setPassword(passwordEncoder.encode(req.getNewPassword()));
-        user.setTemporaryPassword(false);
+        user.setTempPassword(null);
+        user.setFirstLogin(false);
         user.setTempPasswordExpiry(null);
 
         userRepository.save(user);
 
         return ResponseEntity.ok("PASSWORD_RESET_SUCCESS");
     }
-
-
-
-
-
 }
