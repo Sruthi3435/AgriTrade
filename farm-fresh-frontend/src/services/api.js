@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "https://agritrade-1-g6ga.onrender.com"
+    baseURL: "https://agritrade-1-g6ga.onrender.com/api"
 });
 
 api.interceptors.request.use((config) => {
