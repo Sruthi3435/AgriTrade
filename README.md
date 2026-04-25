@@ -22,6 +22,7 @@ AgriTrade provides a digital marketplace where:
 The platform focuses on security, scalability, and real-time insights.
 
 ---
+Frontend-https://sruthi3435.github.io/AgriTrade/
 
 ## 🔑 Demo Credentials
 
