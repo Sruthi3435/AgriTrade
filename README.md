@@ -164,8 +164,10 @@ npm run dev
 *Add screenshots here for better visibility*
 
 ```
-![Landing]("C:\Users\lenovo\Pictures\Screenshots\Screenshot 2026-01-11 225934.png")
-![Log in]("C:\Users\lenovo\Pictures\Screenshots\Screenshot 2026-01-11 230202.png")
+![Landing]("<img width="1919" height="907" alt="Screenshot 2026-01-11 230202" src="https://github.com/user-attachments/assets/420f3a76-d43c-46fc-b32b-9faede5f3afe" />
+")
+![Log in]("<img width="1890" height="902" alt="Screenshot 2026-01-11 230605" src="https://github.com/user-attachments/assets/fbf2d167-c4e2-444b-b773-68d8a26903a9" />
+")
 ```
 
 ---
