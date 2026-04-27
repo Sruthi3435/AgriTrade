@@ -164,8 +164,8 @@ npm run dev
 *Add screenshots here for better visibility*
 
 ```
-![Home](your-image-link)
-![Dashboard](your-image-link)
+![Landing]("C:\Users\lenovo\Pictures\Screenshots\Screenshot 2026-01-11 225934.png")
+![Log in]("C:\Users\lenovo\Pictures\Screenshots\Screenshot 2026-01-11 230202.png")
 ```
 
 ---
