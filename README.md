@@ -177,7 +177,7 @@ This project is licensed under the MIT License.
 ## 👩‍💻 Author
 
 **Sruthi Ram**
-GitHub: [https://github.com/your-username](https://github.com/your-username)
+GitHub:(https://github.com/Sruthi3435)
 
 ---
 
